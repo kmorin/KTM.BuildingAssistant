@@ -35,6 +35,7 @@
       <HintPath>..\packages\RevitApi2021.21.0.0.383\lib\net48\AdWindows.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="PresentationCore" />
     <Reference Include="RevitAPI, Version=21.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\RevitApi2021.21.0.0.383\lib\net48\RevitAPI.dll</HintPath>
       <Private>False</Private>
@@ -76,6 +77,15 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <EmbeddedResource Include="..\Shared\img\save_16.png">
+      <Link>img\save_16.png</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\Shared\img\save_32.png">
+      <Link>img\save_32.png</Link>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Reflection;
 using System.Threading;
+using System.Windows.Media.Imaging;
 using Autodesk.Revit.UI;
 using KTM.BuildingAssistant.Common;
 
@@ -10,6 +13,7 @@ namespace KTM.BuildingAssistant.Revit
   public class AppMain : IExternalApplication
   {
     private UIControlledApplication _uiControlledApp;
+    private RibbonPanel _panel;
     private readonly string _tabName = "Building Assistant";
     private readonly string _panelName = "BA";
 
@@ -21,12 +25,15 @@ namespace KTM.BuildingAssistant.Revit
     public Result OnStartup(UIControlledApplication application) {
       _uiControlledApp = application;
 
-      Bootstrap();
-
-      return Result.Succeeded;
+      if (Bootstrap()) {
+        return Result.Succeeded;
+      }
+      else {
+        return Result.Failed;
+      }
     }
 
-    private void Bootstrap() {
+    private bool Bootstrap() {
       try {
         //get current lang
         Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo(CultureInfo.InstalledUICulture.Name);
@@ -37,15 +44,25 @@ namespace KTM.BuildingAssistant.Revit
         //make ribbon
         BuildRibbon();
 
+        //make buttons
+        List<PushButtonData> buttons = BuildButtons();
+
+        AddButtonsToRibbon(buttons);
+
         //make and add buttons
       }
       catch (Exception ex) {
         Logger.Log(nameof(Bootstrap), ex);
+        return false;
       }
+      return true;
     }
     private void InitSession() {
       //TODO: session manager
     }
+    /// <summary>
+    /// Creates the Ribbon Tab and Panel.
+    /// </summary>
     private void BuildRibbon() {
       try {
         _uiControlledApp.CreateRibbonTab(_tabName);
@@ -54,30 +71,107 @@ namespace KTM.BuildingAssistant.Revit
         //do nothing, bad api design.
       }
 
-      RibbonPanel panel = _uiControlledApp.CreateRibbonPanel(_panelName);
+      _panel = _uiControlledApp.CreateRibbonPanel(_panelName);
+    }
 
+    /// <summary>
+    /// Create the buttons to append to the ribbon panel
+    /// </summary>
+    private List<PushButtonData> BuildButtons() {
       string dllPath = Assembly.GetExecutingAssembly().Location;
       string m_namespace = typeof(AppMain).Namespace;
 
-      PushButtonData pbData = CreatePushButtonData(
-        dllPath: dllPath,
-        className: nameof(CmdShowPanel),
-        buttonText: "BuildingAssistant",
-        image16: "img16.png",
-        image32: "img32.png",
-        toolTip: "tooltip",
-        commandAvailability: $"cmdAvail");
+      var listOfButtons = new List<PushButtonData> {
+        //ShowPanelButton
+        CreatePushButtonData(
+          dllPath: dllPath,
+          className: nameof(CmdShowPanel),
+          buttonText: "BuildingAssistant",
+          image16: "save_16.png",
+          image32: "save_32.png",
+          toolTip: "tooltip",
+          nameSpace: m_namespace
+          )
+      };
+
+      return listOfButtons;
     }
 
+    /// <summary>
+    /// Adds all pushbuttons to ribbon
+    /// </summary>
+    private void AddButtonsToRibbon(List<PushButtonData> buttons) {
+      foreach (PushButtonData pbData in buttons) {
+        _panel.AddItem(pbData);
+      }
+    }
+
+    /// <summary>
+    /// Create a PushButtonData object to add to a ribbon panel.
+    /// </summary>
+    /// <param name="dllPath"></param>
+    /// <param name="className"></param>
+    /// <param name="buttonText"></param>
+    /// <param name="image16"></param>
+    /// <param name="image32"></param>
+    /// <param name="toolTip"></param>
+    /// <param name="nameSpace"></param>
+    /// <param name="availabilityClassName"></param>
+    /// <returns></returns>
     private PushButtonData CreatePushButtonData(string dllPath,
       string className,
       string buttonText,
       string image16,
       string image32,
       string toolTip,
-      string commandAvailability = "") {
+      string nameSpace,
+      string availabilityClassName = "") {
 
-      throw new NotImplementedException();
+      if (!File.Exists(dllPath)) {
+        throw new FileNotFoundException();
+      }
+
+      var pbd = new PushButtonData(
+        name: className,
+        text: buttonText,
+        assemblyName: dllPath,
+        className: $"{nameSpace}.{className}") {
+        Image = LoadPngImgSource(image16),
+        LargeImage = LoadPngImgSource(image32),
+        ToolTip = toolTip
+      };
+
+      if (!string.IsNullOrWhiteSpace(availabilityClassName)) {
+        pbd.AvailabilityClassName = $"{nameSpace}.{availabilityClassName}";
+      }
+
+      return pbd;
+    }
+
+    /// <summary>
+    /// Load the PNG image from manifest resouce to a usable ImageSource.
+    /// NOTE: Must be EmbeddedResource
+    /// NOTE: images for Revit must be 96dpi.
+    /// </summary>
+    /// <param name="imageName"></param>
+    /// <returns></returns>
+    private System.Windows.Media.ImageSource LoadPngImgSource(string imageName) {
+      string ns = typeof(AppMain).Namespace;
+      string fullImageName = $"{ns}.{imageName}";
+
+      var assembly = Assembly.GetExecutingAssembly();
+      Stream icon = assembly.GetManifestResourceStream(fullImageName);
+
+      if (icon == null) {
+        throw new FileNotFoundException();
+      }
+
+      var decoder = new PngBitmapDecoder(bitmapStream: icon,
+        createOptions: BitmapCreateOptions.PreservePixelFormat,
+        cacheOption: BitmapCacheOption.Default);
+
+      return decoder.Frames[0];
+
     }
   }
 }
