@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<RevitAddIns>
+	<AddIn Type="Application">
+		<Assembly>KTM.BuildingAssistant.Revit.2021.dll</Assembly>
+		<FullClassName>KTM.BuildingAssistant.Revit.AppMain</FullClassName>
+		<ClientId>{BE489D37-B85C-42B7-9D37-65EFDF6B1165}</ClientId>
+		<Name>KTM.BuildingAssistant.Revit</Name>
+		<VendorId>KTM</VendorId>
+	</AddIn>
+</RevitAddIns>
