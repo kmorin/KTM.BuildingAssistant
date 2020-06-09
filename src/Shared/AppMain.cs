@@ -7,6 +7,7 @@ using System.Threading;
 using System.Windows.Media.Imaging;
 using Autodesk.Revit.UI;
 using KTM.BuildingAssistant.Common;
+using KTM.BuildingAssistant.Revit.Properties;
 
 namespace KTM.BuildingAssistant.Revit
 {
@@ -16,6 +17,7 @@ namespace KTM.BuildingAssistant.Revit
     private RibbonPanel _panel;
     private readonly string _tabName = "Building Assistant";
     private readonly string _panelName = "BA";
+    private DockableBuildingAssistant _dockableWindow;
 
     public Result OnShutdown(UIControlledApplication application) {
       //TODO: clear session and dump all files if needed.
@@ -49,7 +51,8 @@ namespace KTM.BuildingAssistant.Revit
 
         AddButtonsToRibbon(buttons);
 
-        //make and add buttons
+        //init dockable pane
+        RegisterDockablePane();
       }
       catch (Exception ex) {
         Logger.Log(nameof(Bootstrap), ex);
@@ -71,7 +74,7 @@ namespace KTM.BuildingAssistant.Revit
         //do nothing, bad api design.
       }
 
-      _panel = _uiControlledApp.CreateRibbonPanel(_panelName);
+      _panel = _uiControlledApp.CreateRibbonPanel(_tabName, _panelName);
     }
 
     /// <summary>
@@ -157,7 +160,7 @@ namespace KTM.BuildingAssistant.Revit
     /// <returns></returns>
     private System.Windows.Media.ImageSource LoadPngImgSource(string imageName) {
       string ns = typeof(AppMain).Namespace;
-      string fullImageName = $"{ns}.{imageName}";
+      string fullImageName = $"{ns}.img.{imageName}";
 
       var assembly = Assembly.GetExecutingAssembly();
       Stream icon = assembly.GetManifestResourceStream(fullImageName);
@@ -172,6 +175,20 @@ namespace KTM.BuildingAssistant.Revit
 
       return decoder.Frames[0];
 
+    }
+
+    private void RegisterDockablePane() {
+      var dockableGuid = new Guid(Settings.Default.DockableGuid);
+      var dockablePaneId = new DockablePaneId(dockableGuid);
+
+      _uiControlledApp.RegisterDockablePane(dockablePaneId, "Building Assistant", GetDockablePane());
+    }
+
+    private IDockablePaneProvider GetDockablePane() {
+      if (_dockableWindow == null) {
+        _dockableWindow = new DockableBuildingAssistant();
+      }
+      return _dockableWindow;
     }
   }
 }
