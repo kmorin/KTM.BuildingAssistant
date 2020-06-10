@@ -67,6 +67,15 @@
     <Compile Include="..\Shared\CmdShowPanel.cs">
       <Link>CmdShowPanel.cs</Link>
     </Compile>
+    <Compile Include="..\Shared\Events\EvtCollectInstances.cs">
+      <Link>Events\EvtCollectInstances.cs</Link>
+    </Compile>
+    <Compile Include="..\Shared\Events\EvtUpdateCollectionByView.cs">
+      <Link>Events\EvtUpdateCollectionByView.cs</Link>
+    </Compile>
+    <Compile Include="..\Shared\Events\EvtUpdateCollectionInstances.cs">
+      <Link>Events\EvtUpdateCollectionInstances.cs</Link>
+    </Compile>
     <Compile Include="DockableBuildingAssistant.xaml.cs">
       <DependentUpon>DockableBuildingAssistant.xaml</DependentUpon>
     </Compile>

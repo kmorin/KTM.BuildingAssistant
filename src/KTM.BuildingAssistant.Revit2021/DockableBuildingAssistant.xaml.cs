@@ -6,12 +6,8 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using Autodesk.Revit.ApplicationServices;
+using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using KTM.BuildingAssistant.Revit.Properties;
 
@@ -22,8 +18,21 @@ namespace KTM.BuildingAssistant.Revit
   /// </summary>
   public partial class DockableBuildingAssistant : Page, IDockablePaneProvider
   {
+    public ControlledApplication App { get; set; }
+    private Document _doc;
     public DockableBuildingAssistant() {
       InitializeComponent();
+      InitializeDoc();
+      RefreshViewContent();
+    }
+
+    private void RefreshViewContent() {
+      if (_doc == null)
+        return;
+    }
+
+    private void InitializeDoc() {
+      //TODO: Set current open doc
     }
 
     public void SetupDockablePane(DockablePaneProviderData data) {
@@ -35,7 +44,7 @@ namespace KTM.BuildingAssistant.Revit
     }
 
     private DockablePaneId GetDockablePaneId() {
-      Guid dockGuid = new Guid(Settings.Default.DockableGuid);
+      Guid dockGuid = new Guid(Properties.Settings.Default.DockableGuid);
       return new DockablePaneId(dockGuid);
     }
   }

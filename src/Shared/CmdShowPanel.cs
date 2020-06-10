@@ -15,12 +15,19 @@ namespace KTM.BuildingAssistant.Revit
       DockablePane pane = commandData.Application.GetDockablePane(dockablePaneId);
 
       if (pane.IsShown())
-        pane.Hide();
+        HidePane(pane);
       else
-        pane.Show();
+        ShowPane(pane);
 
       return Result.Succeeded;
 
+    }
+
+    private void HidePane(DockablePane pane) {
+      pane.Hide();
+    }
+    private void ShowPane(DockablePane pane) {
+      pane.Show();
     }
 
     private DockablePaneId GetDockablePaneId() {

@@ -2,22 +2,30 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Windows.Media.Imaging;
+using Autodesk.Revit.DB;
+using Autodesk.Revit.DB.Events;
 using Autodesk.Revit.UI;
+using Autodesk.Revit.UI.Events;
 using KTM.BuildingAssistant.Common;
-using KTM.BuildingAssistant.Revit.Properties;
+using KTM.BuildingAssistant.Revit.Events;
+using Settings = KTM.BuildingAssistant.Revit.Properties.Settings;
 
 namespace KTM.BuildingAssistant.Revit
 {
   public class AppMain : IExternalApplication
   {
+    public bool IsPaneVisible => GetIsPaneVisible();
+
     private UIControlledApplication _uiControlledApp;
     private RibbonPanel _panel;
     private readonly string _tabName = "Building Assistant";
     private readonly string _panelName = "BA";
     private DockableBuildingAssistant _dockableWindow;
+    private ExternalEvent _collectInstancesEvent;
 
     public Result OnShutdown(UIControlledApplication application) {
       //TODO: clear session and dump all files if needed.
@@ -53,6 +61,14 @@ namespace KTM.BuildingAssistant.Revit
 
         //init dockable pane
         RegisterDockablePane();
+
+        //external event handler
+        _collectInstancesEvent = ExternalEvent.Create(new EvtCollectInstances());
+
+        //doc changed event handler
+        _uiControlledApp.ControlledApplication.DocumentOpened += DocOpenedEventHandler;
+        _uiControlledApp.ControlledApplication.DocumentChanged += DocChangedEventHandler;
+        _uiControlledApp.ViewActivated += ViewActivatedEventHandler;
       }
       catch (Exception ex) {
         Logger.Log(nameof(Bootstrap), ex);
@@ -60,8 +76,36 @@ namespace KTM.BuildingAssistant.Revit
       }
       return true;
     }
+
+    private void ViewActivatedEventHandler(object sender, ViewActivatedEventArgs e) {
+        var viewEvent = ExternalEvent.Create(new EvtUpdateCollectionByView(e.CurrentActiveView));
+        viewEvent.Raise();
+    }
+
+    private void DocChangedEventHandler(object sender, DocumentChangedEventArgs e) {
+      
+      //build data of added/deleted elements to update cache.
+      var dataTable = new Dictionary<int, List<ElementId>> {
+        {-1,e.GetDeletedElementIds().ToList() },
+        {1,e.GetAddedElementIds().ToList() }
+      };
+      
+      var updatedEvent = ExternalEvent.Create(new EvtUpdateCollectionInstances(dataTable));
+
+      //update cache per view
+      updatedEvent.Raise();
+    }
+
+    private void DocOpenedEventHandler(object sender, DocumentOpenedEventArgs e) {
+      //on doc opned, trigger external event.
+      _collectInstancesEvent.Raise();
+    }
+
     private void InitSession() {
       //TODO: session manager
+
+      //TODO: setup session cache for each document in temp
+
     }
     /// <summary>
     /// Creates the Ribbon Tab and Panel.
@@ -178,10 +222,14 @@ namespace KTM.BuildingAssistant.Revit
     }
 
     private void RegisterDockablePane() {
-      var dockableGuid = new Guid(Settings.Default.DockableGuid);
-      var dockablePaneId = new DockablePaneId(dockableGuid);
+      DockablePaneId dockablePaneId = GetDockablePaneId();
 
       _uiControlledApp.RegisterDockablePane(dockablePaneId, "Building Assistant", GetDockablePane());
+    }
+
+    private static DockablePaneId GetDockablePaneId() {
+      Guid dockableGuid = new Guid(Settings.Default.DockableGuid);
+      return new DockablePaneId(dockableGuid);
     }
 
     private IDockablePaneProvider GetDockablePane() {
@@ -189,6 +237,10 @@ namespace KTM.BuildingAssistant.Revit
         _dockableWindow = new DockableBuildingAssistant();
       }
       return _dockableWindow;
+    }
+
+    private bool GetIsPaneVisible() {
+      return _dockableWindow != null && _dockableWindow.IsVisible;
     }
   }
 }

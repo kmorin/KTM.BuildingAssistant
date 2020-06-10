@@ -11,6 +11,10 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"></RowDefinition>
         </Grid.RowDefinitions>
-        <Label Content="HI"></Label>
+        <TreeView Grid.Row="1"
+                  Name="treeControl"
+                  HorizontalAlignment="Left"
+                  VerticalAlignment="Top"
+                  Width="200"/>
     </Grid>
 </Page>
