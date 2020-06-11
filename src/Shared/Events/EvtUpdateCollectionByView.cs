@@ -20,6 +20,9 @@ namespace KTM.BuildingAssistant.Revit.Events
       else {
         //create and store filtered elem collection in memo cache
       }
+
+      //TODO: update observable collection from filter by view
+      //TODO: this should refresh the dockable view
     }
 
     public string GetName() {
